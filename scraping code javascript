@@ -1,0 +1,82 @@
+scraping website content code javascript
+
+(async function() {
+    let productData = [["Product Name", "Specifications", "Image Links"]]; // CSV Header
+
+    let productCards = document.querySelectorAll('.az_HF.az_yG.az__G.az_nH.az_d8.az_t8'); 
+
+    for (let card of productCards) {
+        let productLinkElement = card.querySelector('a'); 
+        let productNameElement = card.querySelector('.az_yJc'); 
+
+        if (!productLinkElement || !productNameElement) {
+            console.warn("Product link or name not found, skipping...");
+            continue;
+        }
+
+        let productLink = productLinkElement.href;
+        let productName = productNameElement.innerText.trim();
+        console.log("Fetching product:", productName, productLink);
+
+        try {
+            let response = await fetch(productLink);
+            let text = await response.text();
+            let parser = new DOMParser();
+            let doc = parser.parseFromString(text, 'text/html');
+
+            let specificationsTable = doc.querySelector('.az_jnc'); 
+            let htmlTable = <table border="1" cellpadding="5" cellspacing="0"><tr><th>Specification</th><th>Details</th></tr>;
+
+            if (specificationsTable) {
+                specificationsTable.querySelectorAll("tr").forEach(row => {
+                    let cells = row.querySelectorAll("td, th");
+                    if (cells.length === 2) {
+                        htmlTable += <tr><td>${cells[0].innerText.trim()}</td><td>${cells[1].innerText.trim()}</td></tr>;
+                    }
+                });
+                htmlTable += </table>;
+            } else {
+                console.warn("No specifications table found on:", productLink);
+                htmlTable = "No Specifications Found";
+            }
+
+            let imageLinks = [];
+            let enlargedImageBox = doc.querySelector('.az_mWb[data-testid="enlarged-image-box"] img'); 
+
+            if (enlargedImageBox) {
+                let imgSrc = enlargedImageBox.getAttribute('src') || enlargedImageBox.getAttribute('data-src');
+                if (imgSrc) {
+                    imageLinks.push(imgSrc.replace(/(\?[^?]*)$/, "")); // Remove any query params
+                }
+            }
+
+            let imageLinksText = imageLinks.length > 0 ? imageLinks.join(" | ") : "No Images Found";
+            console.log("Extracted Large Image:", imageLinks);
+
+            productData.push([productName, htmlTable, imageLinksText]);
+
+        } catch (error) {
+            console.error("Error fetching product page:", error);
+        }
+    }
+
+    console.log("Final Product Data:", productData);
+
+    if (productData.length > 1) {
+        let csvContent = productData.map(row => 
+            row.map(cell => "${cell.replace(/"/g, '""')}").join(",")
+        ).join("\n");
+
+        let blob = new Blob([csvContent], { type: "text/csv" });
+        let link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "product_data.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        console.log("CSV file generated successfully!");
+    } else {
+        console.warn("No product data collected. CSV will not be downloaded.");
+    }
+})();
