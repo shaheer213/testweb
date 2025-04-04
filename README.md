@@ -1,2 +1,2 @@
 # testweb
-just a basic website using react.
+javascript codes
