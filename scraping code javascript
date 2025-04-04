@@ -46,7 +46,7 @@ scraping website content code javascript
             if (enlargedImageBox) {
                 let imgSrc = enlargedImageBox.getAttribute('src') || enlargedImageBox.getAttribute('data-src');
                 if (imgSrc) {
-                    imageLinks.push(imgSrc.replace(/(\?[^?]*)$/, "")); // Remove any query params
+                    imageLinks.push(imgSrc.replace(/(\?[^?]*)$/, "")); 
                 }
             }
 
